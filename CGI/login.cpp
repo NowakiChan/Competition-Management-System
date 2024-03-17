@@ -14,10 +14,10 @@ std::string getRequest()
 
 int main()
 {
-    login::plugin().initiate( getRequest() );
+    Login::plugin().initiate( getRequest() );
 
     std::cout<<"application/json";
-    std::cout<<login::plugin().getResult();
+    std::cout<<Login::plugin().getResult();
 
     return 0;
 }
