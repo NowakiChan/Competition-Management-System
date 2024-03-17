@@ -17,7 +17,7 @@
 class Login
 {
 private:
-    Login();
+    Login() {}
     Json::Value getUsrInfo();
     std::string returnSuccess();
     std::string returnFail();
