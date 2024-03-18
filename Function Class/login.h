@@ -14,6 +14,10 @@
 #endif
 
 #define GENERATE_STR(x) "'x'"
+#define STA_VALUE_NAME "status"
+#define DATA_VALUE_NAME "data"
+#define PWD_VALUE_NAME "password"
+#define ID_VALUE_NAME "id"
 class Login
 {
 private:
@@ -37,7 +41,7 @@ public:
 
 Login& Login::plugin()
 {
-    Login singleton;
+    static Login singleton;
     return singleton;
 }
 
@@ -46,7 +50,7 @@ void Login::initiate(const std::string& usr_str)
     Json::Reader processer;
     processer.parse(usr_str,this->front_end_info,false);
 
-    sql::plugin().localConnect("root","","test");
+    //sql::plugin().localConnect("root","","test");
 }
 
 void Login::initiate(const char* usr_str)
@@ -57,13 +61,16 @@ void Login::initiate(const char* usr_str)
 
 int Login::compare()
 {
-    if(front_end_info.isMember("id") && front_end_info.isMember("password")){
-        std::string info_qry = "SELECT password FROM User_Info WHERE id = " + front_end_info["id"].asString();
+    sql::plugin().localConnect("root","","test");// sql must be init in using function
+
+    if(front_end_info.isMember(ID_VALUE_NAME) && front_end_info.isMember(PWD_VALUE_NAME)){
+        std::string info_qry = "SELECT password FROM User_Info WHERE id = " + front_end_info[ID_VALUE_NAME].asString();
+
         sql::plugin().query(info_qry);
         if(sql::plugin().error()) return ERROR;
-
+        else if(sql::plugin().emptyResult()) return FAIL;
         sql::plugin().useResult();
-        return (front_end_info["password"].asString() == sql::plugin().last_row_result[0][0]) ? OK : FAIL;
+        return (front_end_info[PWD_VALUE_NAME].asString() == sql::plugin().last_row_result[0][0]) ? OK : FAIL;
     }
 
     return ERROR;
@@ -72,12 +79,14 @@ int Login::compare()
 std::string Login::returnSuccess()
 {
     Json::FastWriter writer;
-    this->res_info["ststus"] = OK;
+    this->res_info[STA_VALUE_NAME] = OK;// status is 1:OK
 
-    std::string usr_qry = "SELECT * FROM User_Info WHERE id = " + front_end_info["id"].asString();
+    std::string usr_qry = "SELECT * FROM User_Info WHERE id = " + front_end_info[ID_VALUE_NAME].asString();// get usr info and return to front
     sql::plugin().query(usr_qry);
     sql::plugin().useResult();
-    this->res_info["data"] = sql::plugin().resultToStyledJson();
+
+    this->res_info[DATA_VALUE_NAME] = sql::plugin().resultToStyledJson();// get usr info from sql
+    this->res_info[DATA_VALUE_NAME].removeMember(PWD_VALUE_NAME);// remove password value from result
 
     return writer.write(this->res_info);
 }
@@ -85,16 +94,16 @@ std::string Login::returnSuccess()
 std::string Login::returnError()
 {
     Json::FastWriter writer;
-    this->res_info["status"] = ERROR;
-    this->res_info["data"] = Json::nullValue;
+    this->res_info[STA_VALUE_NAME] = ERROR;
+    this->res_info[DATA_VALUE_NAME] = Json::nullValue;
     return writer.write(res_info);
 }
 
 std::string Login::returnFail()
 {
     Json::FastWriter writer;
-    this->res_info["status"] = FAIL;
-    this->res_info["data"] = Json::nullValue;
+    this->res_info[STA_VALUE_NAME] = FAIL;
+    this->res_info[DATA_VALUE_NAME] = Json::nullValue;
 
     return writer.write(res_info);
 }
@@ -135,7 +144,7 @@ public:
 
 Register& Register::singleton()
 {
-    Register handler;
+    static Register handler;
     return handler;
 }
 

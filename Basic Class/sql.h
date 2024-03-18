@@ -123,11 +123,10 @@ int sql::query(const std::string& query_str)
 void sql::resultOfRows()// get all result from last query,the result store in public member last_row_res
 {
     Row res;
-    if(sql_res == NULL && checkFieldResult()){// protection, prevent from overusing of mysql_store_result(),which may result in seg-fault
-        sql_res = mysql_store_result(sql_stream);
-        is_empty_result = !checkRowResult();// determine whether query returns an empty result 
-    }                                       // note that function chckRowResult() returns true when result is unempty
-    else if(sql_res != NULL && checkFieldResult()){
+
+    if(!this->is_empty_result){
+        this->last_row_result.clear();// clean last result, prepare to store the latest res
+
         const int rows = mysql_num_rows(sql_res),fields = mysql_num_fields(sql_res);
         for(int offset = 0;offset < rows;offset++){// set offset to get the next row
             mysql_data_seek(sql_res,offset);
@@ -141,6 +140,9 @@ void sql::resultOfRows()// get all result from last query,the result store in pu
 
 void sql::useResult()
 {
+    sql_res = mysql_store_result(sql_stream);// store result in sql_res,then will be used by the following function
+    is_empty_result = (checkFieldResult() && !checkRowResult());// determine whether query returns an empty result
+                                                                // this step must be taken after res is being stored!
     this->resultOfRows();
     this->resultOfFields();
     this->freeResult();
@@ -149,9 +151,9 @@ void sql::useResult()
 void sql::resultOfFields()
 {
     std::vector<field> res;
-    if(sql_res == NULL && checkFieldResult())// protection,similar to result()
-        sql_res = mysql_store_result(sql_stream);
-    else if(sql_res != NULL && checkFieldResult()){
+    if(!this->is_empty_result){
+        this->last_field_result.clear();// clean last result, prepare to store the latest res
+
         for(sql_field = mysql_fetch_field(sql_res);sql_field != NULL;sql_field = mysql_fetch_field(sql_res)){
             field column(sql_field->name,sql_field->catalog_length,sql_field->length);
             res.push_back(column);
