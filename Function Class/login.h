@@ -18,7 +18,7 @@ class Login
 {
 private:
     Login() {}
-    Json::Value getUsrInfo();
+    //Json::Value getUsrInfo();
     std::string returnSuccess();
     std::string returnFail();
     std::string returnError();
@@ -32,7 +32,6 @@ public:
     std::string getResult();
     void initiate(const std::string&);
     void initiate(const char*);
-
     ~Login() = default;
 };
 
@@ -47,7 +46,7 @@ void Login::initiate(const std::string& usr_str)
     Json::Reader processer;
     processer.parse(usr_str,this->front_end_info,false);
 
-    //sql::plugin().localConnect()
+    sql::plugin().localConnect("root","","test");
 }
 
 void Login::initiate(const char* usr_str)
@@ -73,7 +72,7 @@ int Login::compare()
 std::string Login::returnSuccess()
 {
     Json::FastWriter writer;
-    this->res_info["ststus"] = "success";
+    this->res_info["ststus"] = OK;
 
     std::string usr_qry = "SELECT * FROM User_Info WHERE id = " + front_end_info["id"].asString();
     sql::plugin().query(usr_qry);
@@ -86,7 +85,7 @@ std::string Login::returnSuccess()
 std::string Login::returnError()
 {
     Json::FastWriter writer;
-    this->res_info["status"] = "error";
+    this->res_info["status"] = ERROR;
     this->res_info["data"] = Json::nullValue;
     return writer.write(res_info);
 }
@@ -94,7 +93,7 @@ std::string Login::returnError()
 std::string Login::returnFail()
 {
     Json::FastWriter writer;
-    this->res_info["status"] = "fail";
+    this->res_info["status"] = FAIL;
     this->res_info["data"] = Json::nullValue;
 
     return writer.write(res_info);
