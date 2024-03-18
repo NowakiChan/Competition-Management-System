@@ -153,6 +153,8 @@ int Register::createRoot()
     root usr;
     usr.load(this->data);
 
+    sql::plugin().localConnect("root","","test"); // connect to the sql
+
     std::string qry = "INSERT INTO User_Into VALUES ( ";
 
     qry += GENERATE_STR(usr.name);
