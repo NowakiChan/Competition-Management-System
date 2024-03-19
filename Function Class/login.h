@@ -58,8 +58,8 @@ int Login::compare()
 
         sql::plugin().query(info_qry);
         if(sql::plugin().error()) return ERROR;
-        else if(sql::plugin().emptyResult()) return FAIL;
         sql::plugin().useResult();
+        if(sql::plugin().emptyResult()) return FAIL;
         return (front_end_info[PWD_VALUE_NAME].asString() == sql::plugin().last_row_result[0][0]) ? OK : FAIL;
     }
 
