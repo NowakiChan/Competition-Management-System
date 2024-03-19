@@ -1,0 +1,44 @@
+#ifndef BASIC
+#define BASIC
+/*code type*/
+#define ERROR -1
+#define OK 1
+#define FAIL 0
+/*code type part end*/
+/*user type*/
+#define ROOT "root"
+#define ADMIN "admin"
+#define NORMAL "normal"
+/*user type part end*/
+#define UNDEF "undefined" /*undefined macro*/
+/*environment path*/
+#define ENV_NAME "CONTENT_LENGTH"
+/*environment path end*/
+
+#include<iostream>
+#include<string>
+#include<time.h>
+std::string getRequest();
+std::string getImmediateTime();
+
+
+std::string getRequest()
+{
+    char* request_len_str = getenv(ENV_NAME);
+    const int request_len = atoi(request_len_str);
+    std::string str;
+    for(int i = 0;i < request_len;i++){
+        char env_ch = getchar();
+        str += (env_ch == '+') ? ' ' : env_ch;
+    }
+    
+    return str;
+}
+
+std::string getImmediateTime()
+{
+    time_t immediate_t = time(NULL);
+    return std::string( ctime(&immediate_t) );
+}
+
+#endif

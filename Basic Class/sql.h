@@ -1,9 +1,11 @@
 #ifndef SQL
 #define SQL
 #include<iostream>
+#include<fstream>
 #include<vector>
 #include<mysql/mysql.h>
 #include<jsoncpp/json/json.h>
+#include"basic.h"
 
 /*field info store struct*/
 class field
@@ -30,7 +32,8 @@ private:
     MYSQL_FIELD* sql_field;
     MYSQL_ROW sql_row;
     bool is_empty_result;// to check if last query returns an empty result
-    sql() : sql_stream(NULL), sql_res(NULL) , error_code(0) {}
+    sql() : sql_stream(NULL), sql_res(NULL) , error_code(0)
+    { mysql_library_init(0,NULL,NULL); }
 public:
     Row last_row_result;
     Column last_field_result;
@@ -39,6 +42,7 @@ public:
     static sql& plugin();// singleton plugin
     int query(const std::string&);// excute query in mysql
     void localConnect(const std::string&,const std::string&,const std::string&);// connect local mysql
+    int connect(const std::string&);
     void useResult();
     bool error();// check if error happen during last query,print the error message at the same time
     //void close_connect();
@@ -52,6 +56,7 @@ protected:
     void freeResult();// must be used after finishing pocessing result of query: to free the space
     void resultOfFields();// store the field result and return as a vector of field-struct
     void resultOfRows();// store the row result and return as a vector of string
+    int connectByFile(const Json::Value&);// read json setting and set a connection
     std::vector<std::string> covertToArray(MYSQL_ROW&,const int);// used in result(),covert MYSQL_ROW to vector of string
     bool isVaildField(const unsigned int index)// check if the crruent field holds a null value
     { return mysql_fetch_lengths(this->sql_res)[index] != 0; }
@@ -95,16 +100,50 @@ std::vector<std::string> sql::covertToArray(MYSQL_ROW& result,const int column)/
     return row_res;
 }
 
+int sql::connectByFile(const Json::Value& cfg)
+{
+    if(cfg.isMember("host") && cfg.isMember("password") && cfg.isMember("user") &&
+       cfg.isMember("db")){
+        unsigned int port = (cfg.isMember("port")) ? cfg["port"].asUInt() : 0;
+        std::string unix_socket = (cfg.isMember("unix_socket")) ? cfg["unix_socket"].asString() : "";
+        unsigned int client_flag = (cfg.isMember("client_flag")) ? cfg["client_flag"].asUInt() : 0;
+
+        this->sql_stream = mysql_init(this->sql_stream);
+        mysql_real_connect(sql_stream,cfg["host"].asCString(),cfg["user"].asCString(),cfg["password"].asCString(),
+                           cfg["db"].asCString(),port,(unix_socket.size() == 0) ? NULL : unix_socket.c_str(),client_flag);
+        if(*mysql_error(this->sql_stream)) return ERROR;
+        else return OK;
+    }
+
+    return ERROR;
+}
+
 sql& sql::plugin()
 {
     static sql connector;
     return connector;
 }
 
+int sql::connect(const std::string& cfg_file_path)
+{
+    std::ifstream fin;
+    fin.open(cfg_file_path);
+
+    if(fin.is_open()){
+        Json::Reader reader;
+        Json::Value config;
+        reader.parse(fin,config);
+
+        return this->connectByFile(config);
+    }
+
+    return ERROR;
+}
+
 void sql::localConnect(const std::string& user_name,const std::string& passwd,const std::string& db_name)
 {
     this->sql_stream = mysql_init(this->sql_stream);// initialize
-    mysql_real_connect(sql_stream,"localhost",user_name.c_str(),passwd.c_str(),db_name.c_str(),0,NULL,0);// connect to database
+    mysql_real_connect(sql_stream,"localhost",user_name.c_str(),passwd.c_str(),db_name.c_str(),0,NULL,0);// connect to database    
 }
 
 void sql::freeResult()
@@ -201,6 +240,7 @@ sql::~sql()
 {
     if(sql_stream != NULL)
         mysql_close(sql_stream);
+    mysql_library_end();
 }
 
 

@@ -3,10 +3,10 @@
 /*design a class for basic event and event queue*/
 #include<iostream>
 #include<string>
-#include<time.h>
 #include<vector>
 #include<fstream>
 #include<jsoncpp/json/json.h>
+#include"basic.h"
 /*macro for state*/
 #define READ 0
 #define UNREAD 1
@@ -24,16 +24,9 @@
 #define PUBLIC_MSG "public"
 #define GROUP_MSG "group"
 #define SYSTEM_MSG "system"
-#ifndef UNDEF
-#define UNDEF "undefined"
-#endif
 /*macro function for message::state and message::category*/
 #define VAILD_STATE(x) (x == READ || x == UNREAD || x == UNINIT)
 /*define end*/
-
-/*non-menber function declaration*/
-std::string getImmediateTime();
-/*end*/
 
 
 
@@ -202,13 +195,6 @@ message_box::~message_box()
 {
     for(auto itr : message_list)
         delete itr;
-}
-
-/*non-menber function*/
-std::string getImmediateTime()
-{
-    time_t immediate_t = time(NULL);
-    return std::string( ctime(&immediate_t) );
 }
 
 std::ostream& operator << (std::ostream& os,const message& msg)

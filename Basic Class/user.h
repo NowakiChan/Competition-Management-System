@@ -14,10 +14,6 @@
 #define AMOUNT "work_amount"
 #define GRADE "grade"
 /*user type*/
-#define ROOT "root"
-#define ADMIN "admin"
-#define NORMAL "normal"
-/*user type part end*/
 const std::string UNDEF_PASS = "12345";
 /*user level part*/
 #define PRO "professor"

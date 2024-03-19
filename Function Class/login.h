@@ -3,16 +3,6 @@
 #include"../Basic Class/sql.h"
 #include"../Basic Class/user.h"
 
-#ifndef ERROR
-#define ERROR -1
-#endif
-#ifndef OK
-#define OK 1
-#endif
-#ifndef FAIL
-#define FAIL 0
-#endif
-
 #define GENERATE_STR(x) "'x'"
 #define STA_VALUE_NAME "status"
 #define DATA_VALUE_NAME "data"
