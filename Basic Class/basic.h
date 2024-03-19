@@ -4,6 +4,7 @@
 #define ERROR -1
 #define OK 1
 #define FAIL 0
+#define DUPLICATED 2
 /*code type part end*/
 /*user type*/
 #define ROOT "root"
