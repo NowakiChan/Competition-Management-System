@@ -3,7 +3,7 @@
 
 int main()
 {
-    Login::plugin().initiate( getRequest() );
+    Login::plugin().initiate( postRequest() );
 
     std::cout<<"Content-type: application/json\n\n";
     std::cout<<Login::plugin().getResult();

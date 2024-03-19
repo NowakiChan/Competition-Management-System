@@ -2,12 +2,17 @@
 #define LOGIN
 #include"../Basic Class/sql.h"
 #include"../Basic Class/user.h"
-
-#define GENERATE_STR(x) "'x'"
+/*login value name*/
+#define GENERATE_STR(x) "'" + x + "'"
 #define STA_VALUE_NAME "status"
 #define DATA_VALUE_NAME "data"
 #define PWD_VALUE_NAME "password"
 #define ID_VALUE_NAME "id"
+#define TYPE_VALUE_NAME "usertype"
+#define USRNAME_VALUE_NAME "username"
+/*login value name end*/
+/*sql query for diffrent user group*/
+#define ROOT_VALUE_LIST "(id,username,password,usertype,phone_number,email_address,college)"
 class Login
 {
 private:
@@ -118,19 +123,38 @@ private:
     int createRoot();
     int createAdmin();
     int creatNormal();
-    int checkDuplicated();
+    int creatAccount();
 public:
     static Register& singleton();
-    void setData(const std::string&);
-    void setData(const char*);
-    int createAccount();
+    int setData(const std::string&);
+    //void setData(const char*);
+    std::string createAccount();
     std::string returnSuccess();
     std::string returnFail();
     std::string returnError();
     std::string returnDuplicated();
 
     ~Register() = default;
+protected:
+    bool legalData();
+    int checkDuplicated();
 };
+
+bool Register::legalData()// judge whether the data has all necessary data
+{
+    return this->data.isMember(ID_VALUE_NAME) && this->data.isMember(USRNAME_VALUE_NAME) &&
+           this->data.isMember(PWD_VALUE_NAME) && this->data.isMember(TYPE_VALUE_NAME);
+}
+
+int Register::checkDuplicated()
+{
+    sql::plugin().localConnect("root","","test");
+
+    std::string qry = "SELECT * FROM User_Info WHERE id = " + this->data["id"].asString();
+    sql::plugin().useResult();
+    return (sql::plugin().emptyResult()) ? OK : FAIL;
+}
+
 
 Register& Register::singleton()
 {
@@ -138,26 +162,36 @@ Register& Register::singleton()
     return handler;
 }
 
+int Register::setData(const std::string& front_end_data)
+{
+    Json::Reader reader;
+    reader.parse(front_end_data,this->data);
+
+    if(!legalData()) return FAIL;
+    return checkDuplicated();
+}
+
 int Register::createRoot()
 {
-    root usr;
-    usr.load(this->data);
-
     sql::plugin().localConnect("root","","test"); // connect to the sql
 
-    std::string qry = "INSERT INTO User_Into VALUES ( ";
+    std::string qry = "INSERT INTO User_Info ";
+                qry += ROOT_VALUE_LIST;
+                qry += " VALUES (";
 
-    qry += GENERATE_STR(usr.name);
+    qry += GENERATE_STR( this->data[ID_VALUE_NAME].asString() );
     qry += ",";
-    qry += GENERATE_STR(usr.password);
+    qry += GENERATE_STR( this->data[USRNAME_VALUE_NAME].asString() );
     qry += ",";
-    qry += GENERATE_STR(usr.type);
+    qry += GENERATE_STR( this->data[PWD_VALUE_NAME].asString() );
     qry += ",";
-    qry += GENERATE_STR(usr.mail_address);
+    qry += GENERATE_STR( this->data[TYPE_VALUE_NAME].asString() );
     qry += ",";
-    qry += GENERATE_STR(usr.phone_number);
+    qry += (this->data.isMember("phone_number")) ? GENERATE_STR( this->data["phone_number"].asString() ) : NULL;
     qry += ",";
-    qry += GENERATE_STR(usr.apartment);
+    qry += (this->data.isMember("email_address")) ? GENERATE_STR( this->data["email_address"].asString() ) : NULL;
+    qry += ",";
+    qry += (this->data.isMember("college")) ? GENERATE_STR( this->data["college"].asString() ) : NULL;
     qry += ")";
 
     sql::plugin().query(qry);

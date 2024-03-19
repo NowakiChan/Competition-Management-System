@@ -18,11 +18,11 @@
 #include<iostream>
 #include<string>
 #include<time.h>
-std::string getRequest();
+std::string postRequest();
 std::string getImmediateTime();
 
 
-std::string getRequest()
+std::string postRequest()
 {
     char* request_len_str = getenv(ENV_NAME);
     const int request_len = atoi(request_len_str);
