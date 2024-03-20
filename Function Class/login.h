@@ -13,6 +13,7 @@
 /*login value name end*/
 /*sql query for diffrent user group*/
 #define ROOT_VALUE_LIST "(id,username,password,usertype,phone_number,email_address,college)"
+#define ADMIN_VALUE_LIST "(id,username,password,usertype,phone_number,email_address,college,profession,level,work_amount)"
 class Login
 {
 private:
@@ -118,12 +119,13 @@ class Register
 {
 private:
     Json::Value data;
+    Json::Value dunplica_data;
 private:
     Register() {}
     int createRoot();
     int createAdmin();
     int creatNormal();
-    int creatAccount();
+    //int creatAccount();
 public:
     static Register& singleton();
     int setData(const std::string&);
@@ -150,9 +152,14 @@ int Register::checkDuplicated()
 {
     sql::plugin().localConnect("root","","test");
 
-    std::string qry = "SELECT * FROM User_Info WHERE id = " + this->data["id"].asString();
+    std::string qry = "SELECT * FROM User_Info WHERE id = ";
+                qry += GENERATE_STR( this->data["id"].asString() );
+
     sql::plugin().useResult();
-    return (sql::plugin().emptyResult()) ? OK : FAIL;
+    if(sql::plugin().emptyResult()) return OK;
+
+    this->dunplica_data = sql::plugin().resultToStyledJson();
+    return FAIL;
 }
 
 
@@ -187,15 +194,92 @@ int Register::createRoot()
     qry += ",";
     qry += GENERATE_STR( this->data[TYPE_VALUE_NAME].asString() );
     qry += ",";
-    qry += (this->data.isMember("phone_number")) ? GENERATE_STR( this->data["phone_number"].asString() ) : NULL;
+    qry += (this->data.isMember("phone_number")) ? GENERATE_STR( this->data["phone_number"].asString() ) : "NULL";
     qry += ",";
-    qry += (this->data.isMember("email_address")) ? GENERATE_STR( this->data["email_address"].asString() ) : NULL;
+    qry += (this->data.isMember("email_address")) ? GENERATE_STR( this->data["email_address"].asString() ) : "NULL";
     qry += ",";
-    qry += (this->data.isMember("college")) ? GENERATE_STR( this->data["college"].asString() ) : NULL;
+    qry += (this->data.isMember("college")) ? GENERATE_STR( this->data["college"].asString() ) : "NULL";
     qry += ")";
 
     sql::plugin().query(qry);
-    return (sql::plugin().error()) ? FAIL : OK;
+    return (sql::plugin().error()) ? ERROR : OK;
+}
+
+int Register::createAdmin()
+{
+    sql::plugin().localConnect("root","","test");
+
+    std::string qry = "INSERT INTO User_Info ";
+                qry += ADMIN_VALUE_LIST;
+                qry += " VALUES (";
+
+    qry += GENERATE_STR( this->data[ID_VALUE_NAME].asString() );
+    qry += ",";
+    qry += GENERATE_STR( this->data[USRNAME_VALUE_NAME].asString() );
+    qry += ",";
+    qry += GENERATE_STR( this->data[PWD_VALUE_NAME].asString() );
+    qry += ",";
+    qry += GENERATE_STR( this->data[TYPE_VALUE_NAME].asString() );
+    qry += ",";
+    qry += (this->data.isMember("phone_number")) ? GENERATE_STR( this->data["phone_number"].asString() ) : "NULL";
+    qry += ",";
+    qry += (this->data.isMember("email_address")) ? GENERATE_STR( this->data["email_address"].asString() ) : "NULL";
+    qry += ",";
+    qry += (this->data.isMember("college")) ? GENERATE_STR( this->data["college"].asString() ) : "NULL";
+    qry += ",";
+    qry += (this->data.isMember("profession")) ? GENERATE_STR( this->data["profession"].asString() ) : "NULL";
+    qry += ",";
+    qry += (this->data.isMember("level")) ? GENERATE_STR( this->data["level"].asString() ) : "NULL";
+    qry += ",";
+    qry += (this->data.isMember("work_amount")) ? this->data["work_amount"].asString() : "0.0";
+    qry += ")";
+
+    sql::plugin().query(qry);
+    return (sql::plugin().error()) ? ERROR : OK;
+}
+
+std::string Register::returnSuccess()
+{
+    Json::FastWriter writer;
+    Json::Value res;
+    res["status"] = OK;
+    res["data"] = Json::nullValue;
+
+    return writer.write(res);
+}
+
+std::string Register::returnError()
+{
+    Json::FastWriter writer;
+    Json::Value res;
+    res["status"] = ERROR;
+    res["data"] = Json::nullValue;
+
+    return writer.write(res);
+}
+
+std::string Register::returnFail()
+{
+    Json::FastWriter writer;
+    Json::Value res;
+    res["status"] = FAIL;
+    res["data"] = this->dunplica_data;
+
+    return writer.write(res);
+}
+
+std::string Register::createAccount()
+{
+    int status = ERROR;
+
+    if(this->data[TYPE_VALUE_NAME].asString() == ROOT)
+        status = this->createRoot();
+    else if(this->data[TYPE_VALUE_NAME].asString() == ADMIN)
+        status = this->createAdmin();
+    else if(this->data[TYPE_VALUE_NAME].asString() == STU || this->data[TYPE_VALUE_NAME].asString() == TEAC)
+        status = this->creatNormal();
+
+    return (status == ERROR) ? this->returnError() : this->returnSuccess();
 }
 
 #endif
