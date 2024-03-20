@@ -11,6 +11,6 @@ int main()
     }
     else if(status_code == FAIL) std::cout<<Register::singleton().returnFail();
     else if(status_code == ERROR) std::cout<<Register::singleton().returnError();
-    else if(status_code == DUPLICATED) std::cout<<Register::singleton().returnDuplicated();
+    else if(status_code == DUPLICATED) std::cout<<Register::singleton().returnDuplicate();
     return 0;
 }

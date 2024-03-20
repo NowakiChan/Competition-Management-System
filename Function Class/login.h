@@ -2,6 +2,7 @@
 #define LOGIN
 #include"../Basic Class/sql.h"
 #include"../Basic Class/user.h"
+#include"../Basic Class/basic.h"
 /*login value name*/
 #define GENERATE_STR(x) "'" + x + "'"
 #define STA_VALUE_NAME "status"
@@ -139,7 +140,7 @@ public:
     std::string returnSuccess();
     std::string returnFail();
     std::string returnError();
-    std::string returnDuplicated();
+    std::string returnDuplicate();
 
     ~Register() = default;
 protected:
@@ -160,15 +161,18 @@ int Register::checkDuplicated()
 
     std::string qry = "SELECT * FROM User_Info WHERE id = ";
                 qry += GENERATE_STR( this->data["id"].asString() );
+    
+    sql::plugin().query(qry);
+    if(sql::plugin().error()) return ERROR;
 
     sql::plugin().useResult();
     if(sql::plugin().emptyResult()) return OK;
 
     this->dunplica_data = sql::plugin().resultToStyledJson();
-    return FAIL;
+    return DUPLICATED;
 }
 
-int Register::checkSimilar()
+int Register::checkSimilar()// check similar data in request,this function is not being put in the process right now
 {
     sql::plugin().localConnect("root","","test");
 
@@ -195,7 +199,7 @@ int Register::checkSimilar()
     if(sql::plugin().emptyResult()) return OK;
 
     this->similar_data = sql::plugin().resultToStyledJson();
-    return FAIL;
+    return DUPLICATED;
 }
 
 Register& Register::singleton()
@@ -273,6 +277,7 @@ int Register::createAdmin()
 
 int Register::createNormal()
 {
+
     sql::plugin().localConnect("root","","test");
 
     std::string qry = "INSERT INTO User_Info ";
@@ -333,6 +338,7 @@ std::string Register::returnSuccess()
     Json::FastWriter writer;
     Json::Value res;
     res["status"] = OK;
+    res["info"] = NORMAL_DATA;
     res["data"] = Json::nullValue;
 
     return writer.write(res);
@@ -343,6 +349,7 @@ std::string Register::returnError()
     Json::FastWriter writer;
     Json::Value res;
     res["status"] = ERROR;
+    res["info"] = NORMAL_DATA;
     res["data"] = Json::nullValue;
 
     return writer.write(res);
@@ -353,6 +360,18 @@ std::string Register::returnFail()
     Json::FastWriter writer;
     Json::Value res;
     res["status"] = FAIL;
+    res["info"] = NORMAL_DATA;
+    res["data"] = this->dunplica_data;
+
+    return writer.write(res);
+}
+
+std::string Register::returnDuplicate()
+{
+    Json::FastWriter writer;
+    Json::Value res;
+    res["status"] = FAIL;
+    res["info"] = DUPLICATE_DATA;
     res["data"] = this->dunplica_data;
 
     return writer.write(res);

@@ -15,10 +15,28 @@
 /*environment path*/
 #define ENV_NAME "CONTENT_LENGTH"
 /*environment path end*/
-
+/*data info code*/
+#define NORMAL_DATA 1000
+#define WRONG_FORMAT 1001
+#define DUPLICATE_DATA 1002
+#define SIMILAR_DATA 1003 
+/*basic define of user info*/
+#define NAME "name"
+#define PWD "password"
+#define PHNUMBER "phone_number"
+#define ADDRESS "mail_address"
+/*define of inherited user group*/
+#define APARTMENT "apartment"
+#define COLLEGE "college"
+#define PROFESSION "prefession"
+#define LEVEL "level"
+#define AMOUNT "work_amount"
+#define GRADE "grade"
+/*user type*/
 #include<iostream>
 #include<string>
 #include<time.h>
+#include<ctype.h>
 std::string postRequest();
 std::string getImmediateTime();
 std::string generateGrade(const std::string id);
@@ -47,8 +65,12 @@ std::string getImmediateTime()
 inline
 std::string generateGrade(const std::string id)
 {
-    std::string res = "20" + id[0] + id[1];
-    return res;
+    if(id.size() >= 2 && isdigit(id[0]) && isdigit(id[1])){
+        std::string res("20");
+        return res + id.substr(0,2);
+    }
+    
+    return std::string("NULL");
 }
 
 #endif
