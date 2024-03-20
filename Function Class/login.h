@@ -60,13 +60,16 @@ int Login::compare()
     sql::plugin().localConnect("root","","test");// sql must be init in using function
 
     if(front_end_info.isMember(ID_VALUE_NAME) && front_end_info.isMember(PWD_VALUE_NAME)){
-        std::string info_qry = "SELECT password FROM User_Info WHERE id = " + front_end_info[ID_VALUE_NAME].asString();
+        std::string info_qry = "SELECT password FROM User_Info WHERE id = ";
+                    info_qry += GENERATE_STR( this->front_end_info[ID_VALUE_NAME].asString() );
 
         sql::plugin().query(info_qry);
         if(sql::plugin().error()) return ERROR;
         sql::plugin().useResult();
         if(sql::plugin().emptyResult()) return FAIL;
-        return (front_end_info[PWD_VALUE_NAME].asString() == sql::plugin().last_row_result[0][0]) ? OK : FAIL;
+
+        Json::Value res = sql::plugin().resultToStyledJson();
+        return (front_end_info[PWD_VALUE_NAME].asString() == res[PWD_VALUE_NAME].asString()) ? OK : FAIL;
     }
 
     return ERROR;
