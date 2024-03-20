@@ -22,7 +22,7 @@
 std::string postRequest();
 std::string getImmediateTime();
 
-
+inline
 std::string postRequest()
 {
     char* request_len_str = getenv(ENV_NAME);
@@ -36,6 +36,7 @@ std::string postRequest()
     return str;
 }
 
+inline
 std::string getImmediateTime()
 {
     time_t immediate_t = time(NULL);
