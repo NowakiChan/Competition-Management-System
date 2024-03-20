@@ -13,7 +13,8 @@
 /*login value name end*/
 /*sql query for diffrent user group*/
 #define ROOT_VALUE_LIST "(id,username,password,usertype,phone_number,email_address,college)"
-#define ADMIN_VALUE_LIST "(id,username,password,usertype,phone_number,email_address,college,profession,level,work_amount)"
+#define ADMIN_VALUE_LIST "(id,username,password,usertype,phone_number,email_address,college,level,work_amount)"
+#define STU_VALUE_LIST "(id,username,password,usertype,phone_number,email_address,college,profession,grade)"
 class Login
 {
 private:
@@ -123,11 +124,12 @@ class Register
 private:
     Json::Value data;
     Json::Value dunplica_data;
+    Json::Value similar_data;
 private:
     Register() {}
     int createRoot();
     int createAdmin();
-    int creatNormal();
+    int createNormal();
     //int creatAccount();
 public:
     static Register& singleton();
@@ -143,6 +145,7 @@ public:
 protected:
     bool legalData();
     int checkDuplicated();
+    int checkSimilar();
 };
 
 bool Register::legalData()// judge whether the data has all necessary data
@@ -165,6 +168,35 @@ int Register::checkDuplicated()
     return FAIL;
 }
 
+int Register::checkSimilar()
+{
+    sql::plugin().localConnect("root","","test");
+
+    std::string qry = "SELECT * FROM User_Info WHERE (";
+    qry += "username=";
+    qry += GENERATE_STR( this->data[USRNAME_VALUE_NAME].asString() );
+
+    if(this->data.isMember("phone_number")){
+        qry += " OR ";
+        qry += "phone_number=";
+        qry += GENERATE_STR( this->data["phone_number"].asString() );
+    }
+    if(this->data.isMember("email_address")){
+        qry += " OR ";
+        qry += "email_address=";
+        qry += GENERATE_STR( this->data["email_address"].asString() );
+    }
+    qry += ")";
+
+    sql::plugin().query(qry);
+    if(sql::plugin().error()) return ERROR;
+
+    sql::plugin().useResult();
+    if(sql::plugin().emptyResult()) return OK;
+
+    this->similar_data = sql::plugin().resultToStyledJson();
+    return FAIL;
+}
 
 Register& Register::singleton()
 {
@@ -230,12 +262,67 @@ int Register::createAdmin()
     qry += ",";
     qry += (this->data.isMember("college")) ? GENERATE_STR( this->data["college"].asString() ) : "NULL";
     qry += ",";
-    qry += (this->data.isMember("profession")) ? GENERATE_STR( this->data["profession"].asString() ) : "NULL";
-    qry += ",";
     qry += (this->data.isMember("level")) ? GENERATE_STR( this->data["level"].asString() ) : "NULL";
     qry += ",";
     qry += (this->data.isMember("work_amount")) ? this->data["work_amount"].asString() : "0.0";
     qry += ")";
+
+    sql::plugin().query(qry);
+    return (sql::plugin().error()) ? ERROR : OK;
+}
+
+int Register::createNormal()
+{
+    sql::plugin().localConnect("root","","test");
+
+    std::string qry = "INSERT INTO User_Info ";
+    if(this->data[TYPE_VALUE_NAME] == TEAC){
+        qry += ADMIN_VALUE_LIST;
+        qry += " VALUES (";
+
+        qry += GENERATE_STR( this->data[ID_VALUE_NAME].asString() );
+        qry += ",";
+        qry += GENERATE_STR( this->data[USRNAME_VALUE_NAME].asString() );
+        qry += ",";
+        qry += GENERATE_STR( this->data[PWD_VALUE_NAME].asString() );
+        qry += ",";
+        qry += GENERATE_STR( this->data[TYPE_VALUE_NAME].asString() );
+        qry += ",";
+        qry += (this->data.isMember("phone_number")) ? GENERATE_STR( this->data["phone_number"].asString() ) : "NULL";
+        qry += ",";
+        qry += (this->data.isMember("email_address")) ? GENERATE_STR( this->data["email_address"].asString() ) : "NULL";
+        qry += ",";
+        qry += (this->data.isMember("college")) ? GENERATE_STR( this->data["college"].asString() ) : "NULL";
+        qry += ",";
+        qry += (this->data.isMember("level")) ? GENERATE_STR( this->data["level"].asString() ) : "NULL";
+        qry += ",";
+        qry += (this->data.isMember("work_amount")) ? this->data["work_amount"].asString() : "0.0";
+        qry += ")";
+    }
+    else if(this->data[TYPE_VALUE_NAME] == STU){
+        qry += STU_VALUE_LIST;
+        qry += "VALUES (";
+
+        qry += GENERATE_STR( this->data[ID_VALUE_NAME].asString() );
+        qry += ",";
+        qry += GENERATE_STR( this->data[USRNAME_VALUE_NAME].asString() );
+        qry += ",";
+        qry += GENERATE_STR( this->data[PWD_VALUE_NAME].asString() );
+        qry += ",";
+        qry += GENERATE_STR( this->data[TYPE_VALUE_NAME].asString() );
+        qry += ",";
+        qry += (this->data.isMember("phone_number")) ? GENERATE_STR( this->data["phone_number"].asString() ) : "NULL";
+        qry += ",";
+        qry += (this->data.isMember("email_address")) ? GENERATE_STR( this->data["email_address"].asString() ) : "NULL";
+        qry += ",";
+        qry += (this->data.isMember("college")) ? GENERATE_STR( this->data["college"].asString() ) : "NULL";
+        qry += ",";
+        qry += (this->data.isMember("profession")) ? GENERATE_STR( this->data["profession"].asString() ) : "NULL";
+        qry += ",";
+        qry += (this->data.isMember("grade")) ? GENERATE_STR( this->data["grade"].asString() ) : 
+                GENERATE_STR( generateGrade(this->data[ID_VALUE_NAME].asString()) ); 
+        qry += ")";
+    }
 
     sql::plugin().query(qry);
     return (sql::plugin().error()) ? ERROR : OK;
@@ -280,7 +367,7 @@ std::string Register::createAccount()
     else if(this->data[TYPE_VALUE_NAME].asString() == ADMIN)
         status = this->createAdmin();
     else if(this->data[TYPE_VALUE_NAME].asString() == STU || this->data[TYPE_VALUE_NAME].asString() == TEAC)
-        status = this->creatNormal();
+        status = this->createNormal();
 
     return (status == ERROR) ? this->returnError() : this->returnSuccess();
 }

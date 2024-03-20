@@ -21,6 +21,7 @@
 #include<time.h>
 std::string postRequest();
 std::string getImmediateTime();
+std::string generateGrade(const std::string id);
 
 inline
 std::string postRequest()
@@ -41,6 +42,13 @@ std::string getImmediateTime()
 {
     time_t immediate_t = time(NULL);
     return std::string( ctime(&immediate_t) );
+}
+
+inline
+std::string generateGrade(const std::string id)
+{
+    std::string res = "20" + id[0] + id[1];
+    return res;
 }
 
 #endif
